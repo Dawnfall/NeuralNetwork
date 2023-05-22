@@ -1,0 +1,75 @@
+#pragma once
+
+#include <math.h>
+#include <vector>
+
+static class MathUtils
+{
+public:
+	static float Default(float x) {
+		return x;
+	}
+
+	float DefaultDerivative(float x) {
+		return x; //TODO: maybe wrong??
+	}
+
+	inline static float Sigmoid(float x) {
+		if (x > 0) {
+			return 1.0f / (1.0f + exp(-x));
+		}
+		else {
+			float exp_x = exp(x);
+			return exp_x / (1.0f + exp_x);
+		}
+	}
+
+	inline static float SigmoidDerivative(float x) {
+		float sigmoid_x = Sigmoid(x);
+		return sigmoid_x * (1.0f - sigmoid_x);
+	}
+
+	static float SumSquaredVector(const Eigen::VectorXf& vec)
+	{
+		float sum = 0;
+		for (float v : vec)
+			sum += v * v;
+
+		return sum;
+	}
+
+	static void SubstractVec(const std::vector<float>& A, const std::vector<float>& B, Eigen::VectorXf& result)
+	{
+		for (int i = 0; i < A.size(); i++)
+			result[i] = A[i] - B[i];
+	}
+
+	static bool AreEqual(float a, float b, float tolerance = 0.0001) {
+		return std::abs(a - b) < tolerance;
+	}
+
+	static void Print(const std::string& text)
+	{
+		printf(text.c_str());
+	}
+
+	static void Print(int i)
+
+	{
+		Print(std::to_string(i));
+	}
+
+	static void Print(float i)
+	{
+		Print(std::to_string(i));
+	}
+
+	static void Print(const std::vector<float>& vec)
+	{
+		std::string res = "[";
+		for (float i : vec)
+			res += "," + std::to_string(i);
+		res += "]";
+		Print(res);
+	}
+};
