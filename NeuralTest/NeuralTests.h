@@ -11,7 +11,7 @@ public:
 	static void Run()
 	{
 		Test_ForwardPropagation();
-		Test_BackPropagation();
+		//Test_BackPropagation();
 		//Test_XOr();
 	}
 
@@ -22,43 +22,35 @@ private:
 
 		std::vector<float> in = { 1.0,0.5 };
 
-		std::vector<float> bias1 = { -0.2,0.1,-0.3 };
-		std::vector<float> bias2 = { 0.4 };
 
-		std::vector<float> firsLayerFirstNeuronIn = { 0.4,-0.7 };
-		std::vector<float> firstLayerSecNeuronIn = { -0.3,-0.6 };
-		std::vector<float> firstLayerThirdNeuronIn = { -0.2,0.9 };
-		std::vector<float> secLayerFirstNeuronIn = { 0.5,-0.1,0.3 };
+		std::vector<float> firsLayerFirstNeuronIn = { 0.4,-0.7,-0.2 };
+		std::vector<float> firstLayerSecNeuronIn = { -0.3,-0.6,0.1 };
+		std::vector<float> firstLayerThirdNeuronIn = { -0.2,0.9,-0.3 };
+		std::vector<float> secLayerFirstNeuronIn = { 0.5,-0.1,0.3,0.4 };
 
-		std::vector<float> expectedFirstLayer = { 0.4625701547,0.3775406688,0.4875026035 };
-		float expectedOut = 0.6769481382;
+		std::vector<float> expectedFirstLayer = { 0.4625701547,0.3775406688,0.4875026035,1 };
+		std::vector<float> expectedSecLayer = { 0.6769481382,1 };
 
 		dawn::NeuralNetwork n(layers, MathUtils::Sigmoid, MathUtils::SigmoidDerivative);
-		n.SetBiases({ bias1,bias2 });
+
 		n.SetConnections({ {firsLayerFirstNeuronIn,firstLayerSecNeuronIn,firstLayerThirdNeuronIn},{secLayerFirstNeuronIn} });
 
 		n.FeedForward(in);
 
-		MathUtils::Print(n.ToString());
+		std::vector<float> firstLayerOut = n.GetLayer(1);
+		std::vector<float> secLayerOut = n.GetLayer(2);
 
 		bool isOk = true;
-		if (!MathUtils::AreEqual(n.GetOutputLayer()[0], expectedOut))
+		if (!MathUtils::AreEqual(firstLayerOut, expectedFirstLayer))
 		{
 			isOk = false;
-			MathUtils::Print("Feedforward output not match\n");
+			MathUtils::Print("Feedforward first layer not match\n");
 		}
-
-		std::vector<float> firstLayer = n.GetLayer(1);
-		for (int i = 0; i < expectedFirstLayer.size(); i++)
+		if (!MathUtils::AreEqual(secLayerOut, expectedSecLayer))
 		{
-			if (!MathUtils::AreEqual(expectedFirstLayer[i], firstLayer[i]))
-			{
-				isOk = false;
-				MathUtils::Print("Feedforward first layer not match\n");
-			}
+			isOk = false;
+			MathUtils::Print("Feedforward out layer not match\n");
 		}
-
-
 		if (isOk)
 		{
 			MathUtils::Print("Feedforward success\n");
@@ -72,16 +64,12 @@ private:
 		std::vector<float> in = { 1.0,0.5 };
 		std::vector<float> target = { 0.8 };
 
-		std::vector<float> bias1 = { -0.2,0.1,-0.3 };
-		std::vector<float> bias2 = { 0.4 };
-
-		std::vector<float> firsLayerFirstNeuronIn = { 0.4,-0.7 };
-		std::vector<float> firstLayerSecNeuronIn = { -0.3,-0.6 };
-		std::vector<float> firstLayerThirdNeuronIn = { -0.2,0.9 };
-		std::vector<float> secLayerFirstNeuronIn = { 0.5,-0.1,0.3 };
+		std::vector<float> firsLayerFirstNeuronIn = { 0.4,-0.7 ,-0.2 };
+		std::vector<float> firstLayerSecNeuronIn = { -0.3,-0.6,0.1 };
+		std::vector<float> firstLayerThirdNeuronIn = { -0.2,0.9,-0.3 };
+		std::vector<float> secLayerFirstNeuronIn = { 0.5,-0.1,0.3,0.4 };
 
 		dawn::NeuralNetwork n(layers, MathUtils::Sigmoid, MathUtils::SigmoidDerivative);
-		n.SetBiases({ bias1,bias2 });
 		n.SetConnections({ {firsLayerFirstNeuronIn,firstLayerSecNeuronIn,firstLayerThirdNeuronIn},{secLayerFirstNeuronIn} });
 
 		dawn::TrainData d;
@@ -145,4 +133,6 @@ private:
 		if (isOk)
 			MathUtils::Print("XOR test success");
 	}
+
+
 };

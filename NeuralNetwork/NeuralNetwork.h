@@ -7,13 +7,15 @@
 #include "MathUtils.h"
 #include "Data.h"
 
+
+//TODO: bias neurons should not be returned as output layer
+
 namespace dawn
 {
 	class NeuralNetwork
 	{
 	private:
 		std::vector<Eigen::VectorXf> m_neurons;
-		std::vector<Eigen::VectorXf> m_biases;
 		std::vector<Eigen::MatrixXf> m_weights;
 
 		std::vector<Eigen::VectorXf> m_errors;
@@ -36,7 +38,6 @@ namespace dawn
 		std::vector<float> GetInputLayer() { return std::vector<float>(m_neurons[0].data(), m_neurons[0].data() + m_neurons[0].size()); }
 		std::vector<float> GetOutputLayer() { return std::vector<float>(m_neurons[GetLayerCount() - 1].data(), m_neurons[GetLayerCount() - 1].data() + m_neurons[GetLayerCount() - 1].size()); }
 
-		void SetBiases(const std::vector<std::vector<float>>& biasLayers);
 		void SetConnections(const std::vector<std::vector<std::vector<float>>>& connLayers);
 		void SetActivation(float (*activation)(float));
 

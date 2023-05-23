@@ -13,13 +13,18 @@ namespace dawn
 
 		for (int i = 0; i < layers.size(); i++)
 		{
-			m_neurons.emplace_back(Eigen::VectorXf::Zero(layers[i]));
+			if (i < layers.size() - 1)
+			{
+				m_neurons.emplace_back(Eigen::VectorXf::Zero(layers[i] + 1));
+				m_neurons[i][m_neurons[i].size() - 1] = 1;
+			}
+			else
+				m_neurons.emplace_back(Eigen::VectorXf::Zero(layers[i]));
 
 			if (i > 0)
 			{
-				m_errors.emplace_back(Eigen::VectorXf::Zero(layers[i]));
-				m_biases.emplace_back(Eigen::VectorXf::Random(layers[i]));
-				m_weights.emplace_back(Eigen::MatrixXf(layers[i], layers[i - 1]));
+				m_errors.emplace_back(Eigen::VectorXf::Zero(layers[i] + 1));
+				m_weights.emplace_back(Eigen::MatrixXf(layers[i], layers[i - 1] + 1));
 			}
 		}
 
@@ -42,19 +47,13 @@ namespace dawn
 		}
 	}
 
-	void NeuralNetwork::SetBiases(const std::vector<std::vector<float>>& biasLayers)
-	{
-		for (int i = 0; i < biasLayers.size(); i++)
-			for (int j = 0; j < biasLayers[i].size(); j++)
-				m_biases[i][j] = biasLayers[i][j];
-	}
 
 	void NeuralNetwork::SetConnections(const std::vector<std::vector<std::vector<float>>>& connLayers)
 	{
 		for (int i = 0; i < connLayers.size(); i++)
-			for (int j = 0; j < connLayers[i].size(); j++)
-				for (int k = 0; k < connLayers[i][j].size(); k++)
-					m_weights[i](j, k) = connLayers[i][j][k];
+			for (int row = 0; row < connLayers[i].size(); row++)
+				for (int col = 0; col < connLayers[i][row].size(); col++)
+					m_weights[i](row, col) = connLayers[i][row][col];
 	}
 
 	void NeuralNetwork::SetActivation(float(*activation)(float))
@@ -68,15 +67,11 @@ namespace dawn
 
 		for (int i = 0; i < m_weights.size(); i++)
 		{
-			Eigen::VectorXf nextLayer = (m_weights[i] * m_neurons[i]) + m_biases[i];
+			int size = (i == m_weights.size() - 1) ? m_neurons[i + 1].size() : m_neurons[i + 1].size() - 1;
 
-			for (int j = 0; j < m_neurons[i + 1].size(); j++)
-			{
-				float tempA = nextLayer[j];
-				float tempB = m_activation(nextLayer[j]);
-
-				m_neurons[i + 1][j] = m_activation(nextLayer[j]);
-			}
+			m_neurons[i + 1].head(size) = m_weights[i] * m_neurons[i];
+			for (int j = 0; j < size; j++)
+				m_neurons[i + 1][j] = m_activation(m_neurons[i + 1][j]);
 		}
 
 		return GetOutputLayer();
@@ -103,7 +98,7 @@ namespace dawn
 		{
 			for (int j = 0; j < m_errors[i].size(); j++)
 				m_errors[i][j] *= m_neurons[i + 1][j] * (1.0 - m_neurons[i + 1][j]);
-				//m_errors[i][j] *= m_activationDerivative(m_neurons[i + 1][j]);
+			//m_errors[i][j] *= m_activationDerivative(m_neurons[i + 1][j]);
 			m_errors[i - 1] = m_weights[i].transpose() * m_errors[i];
 		}
 
@@ -123,7 +118,6 @@ namespace dawn
 		for (int i = 0; i < GetLayerCount() - 1; i++)
 		{
 			m_weights[i] -= learnRate * m_errors[i] * m_neurons[i].transpose();
-			m_biases[i] -= learnRate * m_errors[i];
 		}
 	}
 
@@ -144,45 +138,44 @@ namespace dawn
 		}
 	}
 
-
 	void NeuralNetwork::TempTrain(const std::vector<TrainData>& data, const TrainParams& params)
 	{
-		int epochCount = 0;
-		while (epochCount <= params.maxEpoch)
-		{
-			for (const TrainData& d : data)
-			{
-				SetInputLayer(d.input);
+		//int epochCount = 0;
+		//while (epochCount <= params.maxEpoch)
+		//{
+		//	for (const TrainData& d : data)
+		//	{
+		//		SetInputLayer(d.input);
 
-				//feed forward
-				for (int i = 0; i < m_weights.size(); i++)
-				{
-					Eigen::VectorXf nextLayer = (m_weights[i] * m_neurons[i]) + m_biases[i];
+		//		//feed forward
+		//		for (int i = 0; i < m_weights.size(); i++)
+		//		{
+		//			//Eigen::VectorXf nextLayer = (m_weights[i] * m_neurons[i]) + m_biases[i];
 
-					for (int j = 0; j < m_neurons[i + 1].size(); j++)
-						m_neurons[i + 1][j] = m_activation(nextLayer[j]);
-				}
+		//			//for (int j = 0; j < m_neurons[i + 1].size(); j++)
+		//			//	m_neurons[i + 1][j] = m_activation(nextLayer[j]);
+		//		}
 
-				//calculate error based on target
-				MathUtils::SubstractVec(d.target, GetOutputLayer(), m_errors[m_errors.size() - 1]);
+		//		//calculate error based on target
+		//		MathUtils::SubstractVec(d.target, GetOutputLayer(), m_errors[m_errors.size() - 1]);
 
-				//backpropagation
-				for (int i = m_errors.size() - 1; i > 0; i--)
-				{
-					for (int j = 0; j < m_errors[i].size(); j++)
-						m_errors[i][j] *= m_activationDerivative(m_neurons[i + 1][j]);
-					m_errors[i - 1] = m_weights[i].transpose() * m_errors[i];
-				}
+		//		//backpropagation
+		//		for (int i = m_errors.size() - 1; i > 0; i--)
+		//		{
+		//			for (int j = 0; j < m_errors[i].size(); j++)
+		//				m_errors[i][j] *= m_activationDerivative(m_neurons[i + 1][j]);
+		//			m_errors[i - 1] = m_weights[i].transpose() * m_errors[i];
+		//		}
 
-				for (int i = 0; i < GetLayerCount() - 1; i++)
-				{
-					m_weights[i] -= params.learnRate * m_errors[i] * m_neurons[i].transpose();
-					m_biases[i] -= params.learnRate * m_errors[i];
-				}
-			}
+		//		for (int i = 0; i < GetLayerCount() - 1; i++)
+		//		{
+		//			m_weights[i] -= params.learnRate * m_errors[i] * m_neurons[i].transpose();
+		//			m_biases[i] -= params.learnRate * m_errors[i];
+		//		}
+		//	}
 
-			epochCount++;
-		}
+		//	epochCount++;
+		//}
 	}
 
 	std::string NeuralNetwork::ToString()
@@ -193,9 +186,9 @@ namespace dawn
 		for (int i = 0; i < m_neurons.size(); i++)
 			ss << "\nLayer " << std::to_string(i) << ":\n" << m_neurons[i];
 
-		ss << "\n\nBiases:\n";
-		for (int i = 0; i < m_biases.size(); i++)
-			ss << "\nLayer " << std::to_string(i + 1) << ":\n" << m_biases[i];
+		//ss << "\n\nBiases:\n";
+		//for (int i = 0; i < m_biases.size(); i++)
+		//	ss << "\nLayer " << std::to_string(i + 1) << ":\n" << m_biases[i];
 
 		ss << "\n\nConnections:\n";
 		for (int i = 0; i < m_weights.size(); i++)

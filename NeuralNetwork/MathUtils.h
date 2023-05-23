@@ -47,6 +47,12 @@ public:
 	static bool AreEqual(float a, float b, float tolerance = 0.0001) {
 		return std::abs(a - b) < tolerance;
 	}
+	static bool AreEqual(const std::vector<float>& a, const std::vector<float>& b, float tolerance = 0.0001){
+		for (int i = 0; i < a.size(); i++)
+			if (!AreEqual(a[i], b[i], tolerance))
+				return false;
+		return true;
+	}
 
 	static void Print(const std::string& text)
 	{
