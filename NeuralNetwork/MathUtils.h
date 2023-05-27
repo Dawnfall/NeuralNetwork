@@ -29,6 +29,19 @@ public:
 		return sigmoid_x * (1.0f - sigmoid_x);
 	}
 
+	inline static float SigmoidDerivativeFromSigmoidInput(float sigmoidX)
+	{
+		return sigmoidX * (1 - sigmoidX);
+	}
+
+	inline static Eigen::VectorXf SigmoidDerivativeFromSigmoidInputVec(const Eigen::VectorXf& sigmoidX)
+	{
+		Eigen::VectorXf res(sigmoidX.size());
+		for (int i = 0; i < sigmoidX.size(); i++)
+			res[i] = MathUtils::SigmoidDerivativeFromSigmoidInput(sigmoidX[i]);
+		return std::move(res);
+	}
+
 	static float SumSquaredVector(const Eigen::VectorXf& vec)
 	{
 		float sum = 0;
@@ -48,6 +61,9 @@ public:
 		return std::abs(a - b) < tolerance;
 	}
 	static bool AreEqual(const std::vector<float>& a, const std::vector<float>& b, float tolerance = 0.0001){
+		if (a.size() != b.size())
+			return false;
+
 		for (int i = 0; i < a.size(); i++)
 			if (!AreEqual(a[i], b[i], tolerance))
 				return false;
@@ -72,10 +88,15 @@ public:
 
 	static void Print(const std::vector<float>& vec)
 	{
+		Print(VecToString(vec));
+	}
+
+	static std::string VecToString(const std::vector<float>& vec)
+	{
 		std::string res = "[";
 		for (float i : vec)
 			res += "," + std::to_string(i);
 		res += "]";
-		Print(res);
+		return res;
 	}
 };
