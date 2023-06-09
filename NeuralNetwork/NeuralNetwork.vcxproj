@@ -13,10 +13,14 @@
   <ItemGroup>
     <ClInclude Include="Data.h" />
     <ClInclude Include="MathUtils.h" />
+    <ClInclude Include="NeuralBridge.h" />
+    <ClInclude Include="NeuralManager.h" />
     <ClInclude Include="NeuralModel.h" />
     <ClInclude Include="NeuralNetwork.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="NeuralBridge.cpp" />
+    <ClCompile Include="NeuralManager.cpp" />
     <ClCompile Include="NeuralModel.cpp" />
     <ClCompile Include="NeuralNetwork.cpp" />
   </ItemGroup>

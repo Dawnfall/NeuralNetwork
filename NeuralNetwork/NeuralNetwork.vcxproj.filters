@@ -27,12 +27,24 @@
     <ClInclude Include="NeuralModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="NeuralManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NeuralBridge.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="NeuralNetwork.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NeuralModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NeuralManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NeuralBridge.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -4,73 +4,158 @@
 #include <iostream>
 #include <random>
 
+// Data -> [R1,C1,W1,W2,W3,....B1,B2,....][R2,C2,W1,W2,W3....B1B2,...]...
+
 namespace dawn
 {
-	NeuralNetwork::NeuralNetwork(const std::vector<int>& layers, float(*activation)(float), Eigen::VectorXf(*activationDerivative)(const Eigen::VectorXf&))
+#pragma region  Constructors
+
+	NeuralNetwork::NeuralNetwork(
+		const std::vector<int>& layers,
+		std::mt19937* randGen,
+		float(*activation)(float),
+		Eigen::VectorXf(*activationDerivative)(const Eigen::VectorXf&))
 	{
-		m_layers = layers;
 		m_activation = activation;
 		m_activationDerivative = activationDerivative;
 
-		std::random_device rd;
-		std::mt19937 gen(rd());
-		InitWeights(gen);
-		InitBiases(gen);
+		Create(layers);
 
-		InitNeurons();
-	}
-
-	void NeuralNetwork::InitWeights(std::mt19937& gen)
-	{
-		for (int i = 0; i < m_layers.size() - 1; i++)
+		if (randGen)
 		{
-			m_weights.emplace_back(Eigen::MatrixXf(m_layers[i + 1], m_layers[i]));
-
-			float rangeMax = 1 / std::sqrt(m_weights[i].cols());
-			std::uniform_real_distribution<float> dist(-rangeMax, rangeMax);
-
-			for (int row = 0; row < m_weights[i].rows(); row++)
-				for (int col = 0; col < m_weights[i].cols(); col++)
-					m_weights[i](row, col) = dist(gen);
+			InitWeights(*randGen);
+			InitBiases(*randGen);
 		}
 	}
 
-	void NeuralNetwork::InitBiases(std::mt19937& gen)
+	NeuralNetwork::NeuralNetwork(
+		const std::vector<std::vector<std::vector<float>>>& weights,
+		const std::vector<std::vector<float>>& biases,
+		float(*activation)(float),
+		Eigen::VectorXf(*activationDerivative)(const Eigen::VectorXf&))
 	{
-		for (int i = 1; i < m_layers.size(); i++)
+		std::vector<int> layers; //TODO: make this better
+		for (auto weightLayer : weights)
+			layers.emplace_back((int)weightLayer[0].size());
+		layers.emplace_back((int)weights[weights.size() - 1].size());
+
+		m_activation = activation;
+		m_activationDerivative = activationDerivative;
+
+		Create(layers);
+		InitWeights(weights);
+		InitBiases(biases);
+	}
+
+	NeuralNetwork::NeuralNetwork(
+		const std::vector<float>& data)
+	{
+		m_neurons.push_back(Eigen::VectorXf::Zero((int)(data[1])));
+		for (int i = 0; i < data.size(); )
 		{
-			m_biases.emplace_back(Eigen::VectorXf(m_layers[i]));
+			int rowCount = (int)data[i];
+			int colCount = (int)data[i + 1];
 
-			float rangeMax = 1 / std::sqrt(m_weights[i - 1].cols());
-			std::uniform_real_distribution<float> dist(-rangeMax, rangeMax);
+			m_neurons.push_back(Eigen::VectorXf::Zero(rowCount));
+			m_weights.emplace_back(Eigen::MatrixXf(rowCount, colCount));
+			m_biases.emplace_back(Eigen::VectorXf(rowCount));
 
-			for (float& v : m_biases.back())
-				v = dist(gen);
+			for (int row = 0; row < rowCount; row++)
+			{
+				int biasIndex = i + 2 + rowCount * colCount + row;
+				m_biases.back()(row) = data[biasIndex];
+
+				for (int col = 0; col < colCount; col++)
+				{
+					int weightIndex = i + 2 + row * colCount + col;
+					m_weights.back()(row, col) = data[weightIndex];
+				}
+			}
+			i += 2 + (colCount + 1) * rowCount;
 		}
-	}
-	void NeuralNetwork::InitNeurons()
-	{
-		for (int i = 0; i < m_layers.size(); i++)
-			m_neurons.emplace_back(Eigen::VectorXf::Zero(m_layers[i]));
+
+		m_activation = MathUtils::Sigmoid;
+		m_activationDerivative = MathUtils::SigmoidDerivativeFromSigmoidInputVec;
 	}
 
-	void NeuralNetwork::SetConnections(const std::vector<std::vector<std::vector<float>>>& connLayers)
+#pragma endregion
+
+#pragma region Properties
+
+	void NeuralNetwork::SetActivation(float (*activation)(float), Eigen::VectorXf(*activationDerivative)(const Eigen::VectorXf&))
 	{
-		for (int i = 0; i < connLayers.size(); i++)
-			for (int row = 0; row < connLayers[i].size(); row++)
-				for (int col = 0; col < connLayers[i][row].size(); col++)
-					m_weights[i](row, col) = connLayers[i][row][col];
+		m_activation = activation;
+		m_activationDerivative = activationDerivative;
 	}
-	void NeuralNetwork::SetBiases(const std::vector<std::vector<float>>& biases)
+	void NeuralNetwork::SetWeight(int layer, int row, int col, float newValue)
 	{
-		for (int i = 0; i < biases.size(); i++)
-			for (int j = 0; j < biases[i].size(); j++)
-				m_biases[i][j] = biases[i][j];
+		m_weights[layer](row, col) = newValue;
 	}
+	void NeuralNetwork::SetBias(int layer, int row, float newValue)
+	{
+		m_biases[layer](row) = newValue;
+	}
+	std::vector<int> NeuralNetwork::GetLayers()const
+	{
+		//TODO: no inner logic should use this
+		std::vector<int> layers;
+		for (auto& neuronLayer : m_neurons)
+			layers.push_back((int)neuronLayer.size());
+		return layers;
+	}
+	int NeuralNetwork::GetLayerCount()const
+	{
+		return (int)m_neurons.size();
+	}
+
+	int NeuralNetwork::GetLayerSize(int layer)const
+	{
+		if (layer == 0)
+			return m_weights[0].cols();
+		return m_biases[layer - 1].size();
+	}
+	std::vector<float> NeuralNetwork::GetLayer(size_t i)const
+	{
+		return std::vector<float>(m_neurons[i].data(), m_neurons[i].data() + m_neurons[i].size());
+	}
+	float NeuralNetwork::GetWeight(int layer, int row, int col)const
+	{
+		return m_weights[layer](row, col);
+	}
+	float NeuralNetwork::GetBias(int layer, int row)const
+	{
+		return m_biases[layer](row);
+	}
+
+#pragma endregion
+
+#pragma region Operators
+	bool NeuralNetwork::operator==(const NeuralNetwork& other)const
+	{
+		if (GetLayerCount() != other.GetLayerCount())
+			return false;
+
+		for (int i = 0; i < GetLayerCount(); i++)
+			if (GetLayerSize(i) != other.GetLayerSize(i))
+				return  false;
+
+		for (int i = 0; i < GetLayerCount()-1; i++)
+			if (!m_biases[i].isApprox(other.m_biases[i]) || !m_weights[i].isApprox(other.m_weights[i]))
+				return false;
+
+		return true;
+	}
+	bool NeuralNetwork::operator!=(const NeuralNetwork& other)const
+	{
+		return !(*this == other);
+	}
+
+#pragma endregion
 
 	std::vector<float> NeuralNetwork::FeedForward(const std::vector<float>& inputs)
 	{
-		SetInputLayer(inputs);
+		for (int i = 0; i < inputs.size(); i++)
+			m_neurons[0][i] = inputs[i];
 
 		for (int i = 0; i < m_weights.size(); i++)
 		{
@@ -79,204 +164,107 @@ namespace dawn
 				value = m_activation(value);
 		}
 
-		//std::cout << ToString() << std::endl;
-		return GetOutputLayer();
+		return GetLayer(GetLayerCount() - 1);
 	}
-
 	void NeuralNetwork::BackPropagate(const TrainData& data, float learnRate)
 	{
 		std::vector<Eigen::VectorXf> errors(GetLayerCount() - 1);
-		errors.back() = Eigen::VectorXf::Zero(m_layers.back());
+		errors.back() = Eigen::VectorXf::Zero(m_neurons.back().size());
 
 		std::vector<float> output = FeedForward(data.input);
-
-		//std::cout << "NeuralNetwork:" << std::endl << ToString() << std::endl;
-		//std::cout << "Output: " << MathUtils::VecToString(output) << std::endl;
-		//std::cout << "Target: " << MathUtils::VecToString(data.target) << std::endl;
-
-		//MathUtils::SubstractVec(data.target, output, errors.back());
 		MathUtils::SubstractVec(output, data.target, errors.back());
-
-		//std::cout << "Output errors: " << errors.back() << std::endl;
-		std::cout << "Err squared: " << MathUtils::SumSquaredVector(errors.back()) << std::endl;
-
-		Eigen::VectorXf der = m_activationDerivative(m_neurons.back());
-		//std::cout << "Out Der: " << der << std::endl;
-
-		errors.back() =errors.back().cwiseProduct(der);
-		//std::cout << "ErrOut:" << std::endl << errors.back() << std::endl;
+		errors.back() = errors.back().cwiseProduct(m_activationDerivative(m_neurons.back()));
 
 		for (int i = GetLayerCount() - 2; i > 0; i--)
 		{
-			auto a = m_weights[i].transpose() * errors[i];
-			auto b = m_activationDerivative(m_neurons[i]);
-			//std::cout << "A: " << std::endl << a << std::endl << "B:" << std::endl << b << std::endl;
-
-			auto c = a.cwiseProduct(b);
-
-			//std::cout << "C: " << std::endl << c << std::endl;
-
-			errors[i - 1] = c;
+			errors[i - 1] = (m_weights[i].transpose() * errors[i]).cwiseProduct(m_activationDerivative(m_neurons[i]));
 		}
 
-		for (int i = 0; i < errors.size(); i++)
+		for (int i = GetLayerCount() - 2; i >= 0; i--)
 		{
-			auto gradient = errors[i] * m_neurons[i].transpose();
-			//std::cout << "DelWe: " << i << ":" << std::endl << gradient << std::endl;
-
-			//std::cout << "Err " << i << ":" << std::endl << m_errors[i] << std::endl;
-			//std::cout << "Neuron " << i << ":" << std::endl << m_neurons[i] << std::endl;
-			//std::cout << "Gradient:" << std::endl << gradient << std::endl;
-
-			//std::cout << "Weights pre " << i << ":" << std::endl << m_weights[i] << std::endl;
-			m_weights[i] -= learnRate * gradient;
-			//std::cout << "Weights after " << i << ":" << std::endl << m_weights[i] << std::endl;
-
+			m_weights[i] -= learnRate * errors[i] * m_neurons[i].transpose();
 			m_biases[i] -= learnRate * errors[i];
 		}
+	}
+	std::vector<NeuralNetwork> NeuralNetwork::Duplicate(int count) const
+	{
+		std::vector<NeuralNetwork> copies;
+		copies.reserve(count);
 
-		//output = FeedForward(data.input);
-		//MathUtils::SubstractVec(output, data.target, m_errors[m_errors.size() - 1]);
-		//std::cout << "Err squared: " << MathUtils::SumSquaredVector(m_errors.back());
+		for (int i = 0; i < count; ++i)
+			copies.emplace_back(*this);
 
-
-		//		std::vector<float> output = FeedForward(data.input);
-		//
-		//		//output layer has simple error calculation
-		//		MathUtils::SubstractVec(output, data.target, m_errors[m_errors.size() - 1]);
-		//
-		//		std::cout << ToString() << std::endl;
-		//		// Propagate the error backwards through the layers
-		//		for (int i = m_errors.size() - 1; i > 0; --i)
-		//		{
-		//			std::cout << "Err-1:" << std::endl << m_errors[i - 1] << std::endl << std::endl;
-		//			std::cout << "Err:" << std::endl << m_errors[i] << std::endl << std::endl;
-		//
-		//			auto a = m_errors[i].cwiseProduct(m_activationDerivative(m_neurons[i + 1]));
-		//			std::cout << "a:" << std::endl << a << std::endl << std::endl;
-		//
-		//			auto b = m_activationDerivative(m_neurons[i + 1]);
-		//			std::cout << "b:" << std::endl << b << std::endl << std::endl;
-		//
-		//			auto c = a.cwiseProduct(b);
-		//			m_errors[i] = m_weights[i].transpose() * m_errors[i].cwiseProduct(m_activationDerivative(m_neurons[i + 1]));
-		//		}
-		//
-		//		for (int i = 0; i < m_weights.size(); ++i)
-		//		{
-		//			std::cout << "we:" << std::endl << m_weights[i] << std::endl << std::endl;
-		//			std::cout << "er:" << std::endl << m_errors[i] << std::endl << std::endl;
-		//			std::cout << "ne:" << std::endl << m_neurons[i] << std::endl << std::endl;
-		//			std::cout << "bi:" << std::endl << m_biases[i] << std::endl << std::endl;
-		//
-		////			m_weights[i] -= learnRate * (m_errors[i] * m_neurons[i].transpose());
-		//			m_biases[i] -= learnRate * m_errors[i];
-		//		}
-				//float errorSum = MathUtils::SumSquaredVector(m_errors[m_errors.size() - 1]);
-
-				////std::cout << "Error: " << m_errors[m_errors.size() - 1] << std::endl;
-				//std::cout << "In: " << data.input[0] << " , " << data.input[1]
-				//	<< " ;Out: " << output[0] << " ;Target: " << data.target[0] << " ;SumErrorSquared: " << errorSum << std::endl;
-
-
-				////1. iterate back through neurons/weights and calculate errors for each layer
-				////2. calculate derivative of activation for each layer
-
-				//for (int i = m_errors.size() - 1; i > 0; i--)
-				//{
-				//	//std::cout << "Err-1:" << std::endl << m_errors[i - 1] << std::endl << std::endl;
-				//	//std::cout << "Err:" << std::endl << m_errors[i] << std::endl << std::endl;
-				//	//std::cout << "We:" << std::endl << m_weights[i] << std::endl << std::endl;
-				//	m_errors[i - 1] = m_weights[i].leftCols(m_weights[i].cols() - 1).transpose() * m_errors[i];
-				//	//std::cout << "Err-1:" << std::endl << m_errors[i - 1] << std::endl << std::endl;
-				//}
-
-				//for (int i = m_errors.size() - 2; i > 0; i--)
-				//{
-				//	for (int j = 0; j < m_errors[i].size(); j++)
-				//		m_errors[i][j] *= m_neurons[i + 1][j] * (1.0 - m_neurons[i + 1][j]);
-				//	//m_errors[i - 1] = m_weights[i].transpose() * m_errors[i];
-				//	////m_errors[i][j] *= m_activationDerivative(m_neurons[i + 1][j]);
-
-				//}
-
-				////MathUtils::Print(ToString());
-				////std::cout << "Errors:" << std::endl;
-				////std::cout << m_errors[1] << std::endl << std::endl;
-				////std::cout << m_errors[0] << std::endl << std::endl;
-
-				////for (int i = 0; i < m_errors.size(); i++)
-				////	for (int j = 0; j < m_errors[i].size(); j++)
-				////		m_errors[i][j] *= m_activationDerivative(m_neurons[i + 1][j]);;
-
-				////std::cout << "Errors:" << std::endl;
-				////std::cout << m_errors[1] << std::endl << std::endl;
-				////std::cout << m_errors[0] << std::endl << std::endl;
-
-				//for (int i = 0; i < GetLayerCount() - 1; i++)
-				//{
-				//	m_weights[i] -= learnRate * m_errors[i] * m_neurons[i].transpose();
-				//}
+		return copies;
 	}
 
-	void NeuralNetwork::Train(const std::vector<TrainData>& data, const TrainParams& params)
+	void NeuralNetwork::Mutate(float changeProb, float maxChange, std::mt19937& randGen)
 	{
-		//Train(data[0], params.learnRate);
+		std::uniform_real_distribution<float> isMutationDist(0, 1);
+		std::uniform_real_distribution<float> changeDist(-maxChange, maxChange);
 
-		int epochCount = 0;
-		while (epochCount <= params.maxEpoch)
+		for (int i = 0; i < GetLayerCount() - 1; i++)
 		{
-			for (const TrainData& d : data)
+			for (int row = 0; row < m_weights[i].rows(); row++)
+				for (int col = 0; col < m_weights[i].cols(); col++)
+				{
+					if (isMutationDist(randGen) < changeProb)
+					{
+						float deltaChange = changeDist(randGen);
+						m_weights[i](row, col) += deltaChange;
+					}
+				}
+			for (int j = 0; j < m_biases[i].size(); j++)
 			{
-				BackPropagate(d, params.learnRate);
-				//printf((std::to_string(err) + "\n").c_str());
+				if (isMutationDist(randGen) < changeProb)
+				{
+					float deltaChange = changeDist(randGen);
+					m_biases[i](j) += deltaChange;
+				}
 			}
-
-			epochCount++;
 		}
 	}
-
-	void NeuralNetwork::TempTrain(const std::vector<TrainData>& data, const TrainParams& params)
+	NeuralNetwork NeuralNetwork::CrossOver(NeuralNetwork& a, NeuralNetwork& b, std::mt19937& randGen)
 	{
-		//int epochCount = 0;
-		//while (epochCount <= params.maxEpoch)
-		//{
-		//	for (const TrainData& d : data)
-		//	{
-		//		SetInputLayer(d.input);
+		std::uniform_real_distribution<float> dist(0.0f, 1.0f);
 
-		//		//feed forward
-		//		for (int i = 0; i < m_weights.size(); i++)
-		//		{
-		//			//Eigen::VectorXf nextLayer = (m_weights[i] * m_neurons[i]) + m_biases[i];
-
-		//			//for (int j = 0; j < m_neurons[i + 1].size(); j++)
-		//			//	m_neurons[i + 1][j] = m_activation(nextLayer[j]);
-		//		}
-
-		//		//calculate error based on target
-		//		MathUtils::SubstractVec(d.target, GetOutputLayer(), m_errors[m_errors.size() - 1]);
-
-		//		//backpropagation
-		//		for (int i = m_errors.size() - 1; i > 0; i--)
-		//		{
-		//			for (int j = 0; j < m_errors[i].size(); j++)
-		//				m_errors[i][j] *= m_activationDerivative(m_neurons[i + 1][j]);
-		//			m_errors[i - 1] = m_weights[i].transpose() * m_errors[i];
-		//		}
-
-		//		for (int i = 0; i < GetLayerCount() - 1; i++)
-		//		{
-		//			m_weights[i] -= params.learnRate * m_errors[i] * m_neurons[i].transpose();
-		//			m_biases[i] -= params.learnRate * m_errors[i];
-		//		}
-		//	}
-
-		//	epochCount++;
-		//}
+		NeuralNetwork newNN = a;
+		for (int layer = 0; layer < newNN.GetLayerCount() - 1; layer++)
+		{
+			for (int row = 0; row < newNN.m_weights[layer].rows(); row++)
+			{
+				for (int col = 0; col < newNN.m_weights[layer].cols(); col++)
+				{
+					if (dist(randGen) < 0.5)
+						newNN.SetWeight(layer, row, col, b.GetWeight(layer, row, col));
+				}
+				if (dist(randGen) < 0.5)
+					newNN.SetBias(layer, row, b.GetBias(layer, row));
+			}
+		}
+		return newNN;
 	}
 
-	std::string NeuralNetwork::ToString()
+	std::vector<float> NeuralNetwork::ExportData()const
+	{
+		std::vector<float> data;
+
+		for (int i = 0; i < GetLayerCount() - 1; i++)
+		{
+			data.push_back((float)(m_weights[i].rows()));
+			data.push_back((float)(m_weights[i].cols()));
+
+			for (int row = 0; row < m_weights[i].rows(); row++)
+				for (int col = 0; col < m_weights[i].cols(); col++)
+					data.push_back(m_weights[i](row, col));
+
+			for (float bias : m_biases[i])
+				data.push_back(bias);
+		}
+
+		return data;
+	}
+
+	std::string NeuralNetwork::ToString()const
 	{
 		std::stringstream ss;
 
@@ -295,5 +283,89 @@ namespace dawn
 
 		return ss.str();
 	}
+
+	void NeuralNetwork::Create(const std::vector<int>& layers)
+	{
+		for (int i = 0; i < layers.size() - 1; i++)
+		{
+			m_weights.emplace_back(Eigen::MatrixXf(layers[i + 1], layers[i]));
+			m_biases.emplace_back(Eigen::VectorXf(layers[i + 1]));
+			m_neurons.emplace_back(Eigen::VectorXf::Zero(layers[i]));
+		}
+		m_neurons.emplace_back(Eigen::VectorXf::Zero(layers[layers.size() - 1]));
+	}
+
+	void NeuralNetwork::InitWeights(std::mt19937& gen)
+	{
+		for (int i = 0; i < m_weights.size(); i++)
+		{
+			float rangeMax = 1 / std::sqrt((float)m_weights[i].cols());
+			std::uniform_real_distribution<float> dist(-rangeMax, rangeMax);
+
+			for (int row = 0; row < m_weights[i].rows(); row++)
+				for (int col = 0; col < m_weights[i].cols(); col++)
+					m_weights[i](row, col) = dist(gen);
+		}
+	}
+	void NeuralNetwork::InitWeights(const std::vector<std::vector<std::vector<float>>>& weights)
+	{
+		for (int i = 0; i < m_weights.size(); i++)
+			for (int row = 0; row < m_weights[i].rows(); row++)
+				for (int col = 0; col < m_weights[i].cols(); col++)
+					m_weights[i](row, col) = weights[i][row][col];
+	}
+
+	void NeuralNetwork::InitBiases(std::mt19937& gen)
+	{
+		for (int i = 0; i < m_biases.size(); i++)
+		{
+			float rangeMax = 1.0f / std::sqrt((float)m_weights[i].cols());
+			std::uniform_real_distribution<float> dist(-rangeMax, rangeMax);
+
+			for (int j = 0; j < m_biases[i].size(); j++)
+				m_biases[i][j] = dist(gen);
+		}
+
+	}
+	void NeuralNetwork::InitBiases(const std::vector<std::vector<float>>& biases)
+	{
+		for (int i = 0; i < m_biases.size(); i++)
+			for (int j = 0; j < m_biases[i].size(); j++)
+				m_biases[i][j] = biases[i][j];
+	}
+
+	//void NeuralNetwork::SetConnections(const std::vector<std::vector<std::vector<float>>>& connLayers)
+	//{
+	//	for (int i = 0; i < connLayers.size(); i++)
+	//		for (int row = 0; row < connLayers[i].size(); row++)
+	//			for (int col = 0; col < connLayers[i][row].size(); col++)
+	//				m_weights[i](row, col) = connLayers[i][row][col];
+	//}
+	//void NeuralNetwork::SetBiases(const std::vector<std::vector<float>>& biases)
+	//{
+	//	for (int i = 0; i < biases.size(); i++)
+	//		for (int j = 0; j < biases[i].size(); j++)
+	//			m_biases[i][j] = biases[i][j];
+	//}
+
+
+	void NeuralNetwork::Train(const std::vector<TrainData>& data, const TrainParams& params)
+	{
+		//Train(data[0], params.learnRate);
+
+		int epochCount = 0;
+		while (epochCount <= params.maxEpoch)
+		{
+			for (const TrainData& d : data)
+			{
+				BackPropagate(d, params.learnRate);
+				//printf((std::to_string(err) + "\n").c_str());
+			}
+
+			epochCount++;
+		}
+	}
+
+
 
 }

@@ -3,7 +3,7 @@
 #include <math.h>
 #include <vector>
 
-static class MathUtils
+class MathUtils
 {
 public:
 	static float Default(float x) {
@@ -60,7 +60,7 @@ public:
 	static bool AreEqual(float a, float b, float tolerance = 0.0001) {
 		return std::abs(a - b) < tolerance;
 	}
-	static bool AreEqual(const std::vector<float>& a, const std::vector<float>& b, float tolerance = 0.0001){
+	static bool AreEqual(const std::vector<float>& a, const std::vector<float>& b, float tolerance = 0.001){
 		if (a.size() != b.size())
 			return false;
 

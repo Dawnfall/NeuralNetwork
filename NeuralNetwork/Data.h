@@ -1,15 +1,20 @@
 #pragma once
-
 #include <vector>
 
 namespace dawn
 {
+	struct NeuralNetworkData
+	{
+		int id;
+		std::vector<std::vector<std::vector<float>>> weights;
+		std::vector<std::vector<float>> biases;
+	};
+
 	struct TrainData
 	{
 		std::vector<float> input;
 		std::vector<float> target;
 	};
-
 
 	struct TrainParams
 	{
@@ -18,4 +23,6 @@ namespace dawn
 		float maxEpoch;
 		float minError;
 	};
+
+
 }
