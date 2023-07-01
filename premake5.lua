@@ -16,7 +16,7 @@ project "NeuralNetwork"
     cppdialect "C++20"
 
     targetdir ("%{wks.location}/bin/" .. outputDir .. "/%{prj.name}")
-    objdir ("NeuralNetwork/bin-int/" .. outputDir .. "/%{prj.name}")
+    objdir ("%{wks.location}/bin-int/" .. outputDir .. "/%{prj.name}")
 
     files 
     { 
@@ -49,7 +49,7 @@ project "NeuralTest"
     cppdialect "C++20"
 
     targetdir ("%{wks.location}/bin/" .. outputDir .. "/%{prj.name}")
-    objdir ("NeuralNetwork/bin-int/" .. outputDir .. "/%{prj.name}")
+    objdir ("%{wks.location}/bin-int/" .. outputDir .. "/%{prj.name}")
 
     files 
     { 
@@ -87,3 +87,35 @@ project "NeuralTest"
 
     filter "system:windows"
         systemversion "latest"
+
+project "NeuralBridge"
+    kind "SharedLib"
+    language "C++"
+    cppdialect "C++20"
+
+    targetdir ("%{wks.location}/bin/" .. outputDir .. "/%{prj.name}")
+    objdir ("%{wks.location}/bin-int/" .. outputDir .. "/%{prj.name}")
+
+    files 
+    { 
+        "NeuralBridge/src/**.cpp",
+        "NeuralBridge/src/**.h"
+    } 
+
+    includedirs 
+    { 
+        "3rd" 
+    }
+      
+    defines "NEURAL_IMPORT"
+
+    filter "system:windows"
+        systemversion "latest"
+
+    filter "configurations:Debug"
+        runtime "Debug"
+        symbols "on"
+
+    filter "configurations:Release"
+        runtime "Release"
+        optimize "on"

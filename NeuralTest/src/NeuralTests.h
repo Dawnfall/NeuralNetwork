@@ -1,6 +1,7 @@
 #pragma once
 
 #include "NeuralNetwork.h"
+#include "NeuralManager.h"
 #include "MathUtils.h"
 
 #include <vector>
@@ -29,6 +30,11 @@ public:
 		//Test_BackPropagation1();
 		//Test_BackPropagation2();
 
+
+		//*****************
+		// Neural manager
+
+		Test_CreateNNs();
 	}
 
 private:
@@ -408,6 +414,25 @@ private:
 		}
 		std::cout << "Crossover test success!\n";
 
+	}
+
+	//**************************
+	// Neural Manager
+
+	//*************
+	// Create NNs
+
+	static void Test_CreateNNs()
+	{
+		dawn::NeuralManager manager;
+		std::vector<int> indices = manager.CreateNNs({ 3,2,1 }, 3);
+		if (indices.size() != 3)
+		{
+			std::cout << "Create NNs on Neural manager failed! " << std::endl;
+			return;
+		}
+
+		std::cout << "CreateNNs success!";
 	}
 
 };

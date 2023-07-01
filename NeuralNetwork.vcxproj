@@ -43,14 +43,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>bin\Debug\NeuralNetwork\</OutDir>
-    <IntDir>NeuralNetwork\bin-int\Debug\NeuralNetwork\</IntDir>
+    <IntDir>bin-int\Debug\NeuralNetwork\</IntDir>
     <TargetName>NeuralNetwork</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>bin\Release\NeuralNetwork\</OutDir>
-    <IntDir>NeuralNetwork\bin-int\Release\NeuralNetwork\</IntDir>
+    <IntDir>bin-int\Release\NeuralNetwork\</IntDir>
     <TargetName>NeuralNetwork</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
@@ -98,7 +98,6 @@
     <ClInclude Include="NeuralNetwork\src\Core.h" />
     <ClInclude Include="NeuralNetwork\src\Data.h" />
     <ClInclude Include="NeuralNetwork\src\MathUtils.h" />
-    <ClInclude Include="NeuralNetwork\src\NeuralBridge.h" />
     <ClInclude Include="NeuralNetwork\src\NeuralManager.h" />
     <ClInclude Include="NeuralNetwork\src\NeuralNetwork.h" />
   </ItemGroup>

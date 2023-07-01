@@ -43,14 +43,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>bin\Debug\NeuralTest\</OutDir>
-    <IntDir>NeuralNetwork\bin-int\Debug\NeuralTest\</IntDir>
+    <IntDir>bin-int\Debug\NeuralTest\</IntDir>
     <TargetName>NeuralTest</TargetName>
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>bin\Release\NeuralTest\</OutDir>
-    <IntDir>NeuralNetwork\bin-int\Release\NeuralTest\</IntDir>
+    <IntDir>bin-int\Release\NeuralTest\</IntDir>
     <TargetName>NeuralTest</TargetName>
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
