@@ -26,7 +26,7 @@ project "NeuralNetwork"
 
     includedirs 
     { 
-        "3rd" 
+        "Dependencies" 
     }  
     defines "NEURAL_EXPORT"
 
@@ -59,7 +59,7 @@ project "NeuralTest"
     includedirs 
     { 
         "NeuralNetwork/src",
-        "3rd" 
+        "Dependencies" 
     }
 
     links 
@@ -104,7 +104,7 @@ project "NeuralBridge"
 
     includedirs 
     { 
-        "3rd" 
+        "Dependencies" 
     }
       
     defines "NEURAL_IMPORT"

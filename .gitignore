@@ -9,7 +9,6 @@
 
 # Precompiled Headers
 *.gch
-*.pch
 
 # Compiled Dynamic libraries
 *.so
@@ -31,9 +30,6 @@
 *.out
 *.app
 
-3rd/
-bin/
-bin-int/
 *.vs/
 *.vcxproj
 *.vcxproj.user
@@ -41,4 +37,7 @@ bin-int/
 *.sln
 *.sln.bak
 
+3rd/
+bin/
+bin-int/
 
