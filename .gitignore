@@ -34,4 +34,11 @@
 3rd/
 bin/
 bin-int/
-.vs/
+*.vs/
+*.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
+*.sln
+*.sln.bak
+
+
