@@ -10,7 +10,7 @@
 
 namespace dawn
 {
-	class NEURAL_API NeuralNetwork
+	class NeuralNetwork
 	{
 
 	public:

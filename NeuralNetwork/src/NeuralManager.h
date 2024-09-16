@@ -23,7 +23,7 @@ namespace dawn
 		float* Outputs;
 	};
 
-	class NEURAL_API NeuralManager
+	class NeuralManager
 	{
 	public:
 		NeuralManager();
