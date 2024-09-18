@@ -12,7 +12,7 @@ namespace dawn
 
 	NeuralNetwork::NeuralNetwork(
 		const std::vector<int>& layers,
-		std::mt19937* randGen,
+		std::mt19937& randGen,
 		float(*activation)(float),
 		Eigen::VectorXf(*activationDerivative)(const Eigen::VectorXf&))
 	{
@@ -21,11 +21,9 @@ namespace dawn
 
 		Create(layers);
 
-		if (randGen)
-		{
-			InitWeights(*randGen);
-			InitBiases(*randGen);
-		}
+		InitWeights(randGen);
+		InitBiases(randGen);
+
 	}
 
 	NeuralNetwork::NeuralNetwork(
@@ -139,7 +137,7 @@ namespace dawn
 			if (GetLayerSize(i) != other.GetLayerSize(i))
 				return  false;
 
-		for (int i = 0; i < GetLayerCount()-1; i++)
+		for (int i = 0; i < GetLayerCount() - 1; i++)
 			if (!m_biases[i].isApprox(other.m_biases[i]) || !m_weights[i].isApprox(other.m_weights[i]))
 				return false;
 
@@ -154,8 +152,7 @@ namespace dawn
 
 	std::vector<float> NeuralNetwork::FeedForward(const std::vector<float>& inputs)
 	{
-		for (int i = 0; i < inputs.size(); i++)
-			m_neurons[0][i] = inputs[i];
+		std::copy(inputs.begin(), inputs.end(), m_neurons[0].begin());
 
 		for (int i = 0; i < m_weights.size(); i++)
 		{
@@ -166,6 +163,7 @@ namespace dawn
 
 		return GetLayer(GetLayerCount() - 1);
 	}
+
 	void NeuralNetwork::BackPropagate(const TrainData& data, float learnRate)
 	{
 		std::vector<Eigen::VectorXf> errors(GetLayerCount() - 1);
@@ -365,7 +363,5 @@ namespace dawn
 			epochCount++;
 		}
 	}
-
-
 
 }

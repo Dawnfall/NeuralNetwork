@@ -35,10 +35,12 @@ project "NeuralTest"
     filter "configurations:Debug"
         runtime "Debug"
         symbols "On"
+        staticruntime "on"
 
     filter "configurations:Release"
         runtime "Release"
         symbols "On"
-
+        staticruntime "on"
+        
     filter "system:windows"
         systemversion "latest"

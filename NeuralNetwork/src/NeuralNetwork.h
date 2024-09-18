@@ -17,7 +17,7 @@ namespace dawn
 #pragma region Constructors
 		NeuralNetwork(
 			const std::vector<int>& layers,
-			std::mt19937* randGen,
+			std::mt19937& randGen,
 			float (*activation)(float) = MathUtils::Sigmoid,
 			Eigen::VectorXf(*activationDerivative)(const Eigen::VectorXf&) = MathUtils::SigmoidDerivativeFromSigmoidInputVec);
 
@@ -66,6 +66,8 @@ namespace dawn
 
 		//TODO: probably remove from here
 		void Train(const std::vector<TrainData>& data, const TrainParams& params);
+
+
 
 	private:
 		std::vector<Eigen::VectorXf> m_neurons;

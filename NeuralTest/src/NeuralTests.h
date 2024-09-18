@@ -266,7 +266,7 @@ private:
 		params.minEpoch = 10000;
 		params.minError = 0.1f;
 
-		dawn::NeuralNetwork n(layers, &gen);
+		dawn::NeuralNetwork n(layers, gen);
 		n.Train(trainData, params);
 
 		//test

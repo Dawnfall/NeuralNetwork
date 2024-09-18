@@ -26,9 +26,12 @@ project "NeuralNetwork"
         systemversion "latest"
 
     filter "configurations:Debug"
+        defines { "DEBUG" }
         runtime "Debug"
         symbols "on"
+        staticruntime "on"
 
     filter "configurations:Release"
         runtime "Release"
         optimize "on"
+        staticruntime "on"

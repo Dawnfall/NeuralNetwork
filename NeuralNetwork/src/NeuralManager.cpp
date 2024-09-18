@@ -49,7 +49,7 @@ namespace dawn
 		for (int i = 0; i < count; i++)
 		{
 			int newId = GetValidKey();
-			m_allNNs.insert(m_allNNs.begin() + newId, std::make_unique<NeuralNetwork>(layers, &m_randGen));
+			m_allNNs.insert(m_allNNs.begin() + newId, std::make_unique<NeuralNetwork>(layers, m_randGen));
 			ids.push_back(newId);
 		}
 
@@ -81,35 +81,6 @@ namespace dawn
 
 		return ids;
 	}
-	void NeuralManager::DestroyNNs(const std::vector<int>& ids)
-	{
-		for (int id : ids)
-		{
-			if (m_allNNs[id] == nullptr)
-				continue;
-			m_allNNs[id] = nullptr;
-			RemoveKey(id);
-		}
-	}
-
-	std::vector<std::vector<float>> NeuralManager::GetNNDatas(const std::vector<int>& ids)
-	{
-		std::vector<std::vector<float>> results;
-
-		for (int id : ids)
-		{
-			results.emplace_back(m_allNNs[id]->ExportData());
-		}
-
-		return results;
-	}
-	void NeuralManager::Mutate(const std::vector<int>& ids, float maxChange, float chance)
-	{
-		for (const auto& nn : m_allNNs)
-		{
-			nn->Mutate(chance, maxChange, m_randGen);
-		}
-	}
 
 	void NeuralManager::Run()
 	{
@@ -134,27 +105,6 @@ namespace dawn
 			//finishedQueue.push(request);
 		}
 	}
-
-
-
-
-
-
-
-	NeuralResult* NeuralManager::Calculate(NeuralRequest* requests, size_t requestsSize)
-	{
-		//TODO:....
-
-		return nullptr;
-	}
-	std::vector<int> NeuralManager::Cross(int idA, int idB, int count)
-	{
-		//TODO:.....
-		return std::vector<int>();
-	}
-
-
-
 
 
 
