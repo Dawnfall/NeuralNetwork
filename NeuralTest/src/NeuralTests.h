@@ -157,7 +157,7 @@ private:
 		float learnRate = 0.5;
 
 		for (int i = 0; i < 1000; i++)
-			n.BackPropagate(d, learnRate);
+			n.BackPropagate(d.input,d.target, learnRate);
 	}
 
 
@@ -232,7 +232,7 @@ private:
 		float learnRate = 0.15f;
 
 		for (int i = 0; i < 250; i++)
-			n.BackPropagate(d, learnRate);
+			n.BackPropagate(d.input,d.target, learnRate);
 	}
 
 	//*************

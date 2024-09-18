@@ -54,7 +54,7 @@ namespace dawn
 #pragma region Functionality
 
 		std::vector<float> FeedForward(const std::vector<float>& inputs);
-		void BackPropagate(const TrainData& data, float learnRate);
+		void BackPropagate(const std::vector<float>& input, const std::vector<float>& targetOutput, float learnRate);
 		std::vector<NeuralNetwork> Duplicate(int count)const;
 		void Mutate(float changeProb, float maxChange, std::mt19937& randGen);
 		static NeuralNetwork CrossOver(NeuralNetwork& a, NeuralNetwork& b, std::mt19937& randGen);
@@ -64,9 +64,7 @@ namespace dawn
 		std::vector<float> ExportData()const;
 		std::string ToString()const;
 
-		//TODO: probably remove from here
 		void Train(const std::vector<TrainData>& data, const TrainParams& params);
-
 
 
 	private:

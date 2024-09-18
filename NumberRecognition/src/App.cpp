@@ -2,20 +2,16 @@
 #include <misc/cpp/imgui_stdlib.h>
 #include <algorithm>
 
-App::App()
+App::App():
+	m_canvas(CANVAS_RECT_X, CANVAS_RECT_Y, CANVAS_RECT_WIDTH, CANVAS_RECT_HEIGHT)
 {
 	Utils::InitSDL();
-
-	m_canvasRect.x = CANVAS_RECT_X;
-	m_canvasRect.y = CANVAS_RECT_Y;
-	m_canvasRect.w = CANVAS_RECT_WIDTH;
-	m_canvasRect.h = CANVAS_RECT_HEIGHT;
 }
 
 App::~App()
 {
-	if (m_canvasTexture)
-		SDL_DestroyTexture(m_canvasTexture);
+	if (m_renderer)
+		SDL_DestroyRenderer(m_renderer);
 	if (m_window)
 		SDL_DestroyWindow(m_window);
 
@@ -37,49 +33,23 @@ int App::InitData()
 		return -1;
 	}
 
-	SDL_RendererInfo info;
-	SDL_GetRendererInfo(m_renderer, &info);
-	std::cout << "Renderer name: " << info.name << std::endl;
-	std::cout << "Texture formats: " << std::endl;
-	for (Uint32 i = 0; i < info.num_texture_formats; i++)
-	{
-		std::cout << SDL_GetPixelFormatName(info.texture_formats[i]) << std::endl;
-	}
+	//SDL_RendererInfo info;
+	//SDL_GetRendererInfo(m_renderer, &info);
+	//std::cout << "Renderer name: " << info.name << std::endl;
+	//std::cout << "Texture formats: " << std::endl;
+	//for (Uint32 i = 0; i < info.num_texture_formats; i++)
+	//{
+	//	std::cout << SDL_GetPixelFormatName(info.texture_formats[i]) << std::endl;
+	//}
 
+	m_canvas.SetImage(TEST_IMG_PATH_ORIGINAL, m_renderer);
+	//m_canvas.SetImage(IMG_RESOLUTION_WIDTH, IMG_RESOLUTION_HEIGHT, 255, m_renderer);
 
-	//SDL_PIXELFORMAT_INDEX1MSB
-	m_canvasTexture = SDL_CreateTexture(m_renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, IMG_RESOLUTION_WIDTH, IMG_RESOLUTION_HEIGHT);
-	if (m_canvasTexture == nullptr) {
-		std::cerr << "Canvas texture could not be created! SDL_Error: " << SDL_GetError() << std::endl;
-		return -1;
-	}
-
-	std::vector<Uint32> buffer = std::vector<Uint32>(IMG_RESOLUTION_WIDTH * IMG_RESOLUTION_HEIGHT);
-	m_canvasImg = std::make_shared<Img>(buffer, IMG_RESOLUTION_WIDTH, IMG_RESOLUTION_HEIGHT, SDL_AllocFormat(SDL_PIXELFORMAT_ARGB8888));
-	m_canvasImg->ResetBufferWithARGB8888Color(255, 255, 255, 255);
-
-	m_testImg = Utils::LoadImage(TEST_IMG_PATH_RESIZED.c_str());
 
 	return 0;
 }
 
-void App::UpdatePixelOnCanvas(std::shared_ptr<Img> img, int mouseX, int mouseY)
-{
-	// Check if the mouse click is inside the square
-	if (mouseX >= m_canvasRect.x && mouseX <= m_canvasRect.x + m_canvasRect.w &&
-		mouseY >= m_canvasRect.y && mouseY <= m_canvasRect.y + m_canvasRect.h) {
 
-		int texX = (mouseX - m_canvasRect.x) / (m_canvasRect.w / img->Width);
-		int texY = (mouseY - m_canvasRect.y) / (m_canvasRect.h / img->Height);
-
-		texX = std::clamp(texX, 0, img->Width - 1);
-		texY = std::clamp(texY, 0, img->Height - 1);
-
-		img->SetPixelGray(texX, texY, 0);
-		std::cout << "Mouse clicked at texture pixel: ("
-			<< texX << ", " << texY << ")" << std::endl;
-	}
-}
 
 int App::Run()
 {
@@ -104,13 +74,11 @@ int App::Run()
 		int mouseX, mouseY;
 		if (SDL_GetMouseState(&mouseX, &mouseY) && SDL_BUTTON(SDL_BUTTON_LEFT))
 		{
-			UpdatePixelOnCanvas(m_testImg,mouseX,mouseY);
+			m_canvas.UpdatePixelOnCanvas(mouseX, mouseY);
 		}
 
 		Utils::ClearWindow(m_window, m_renderer, SCREEN_CLEAR_R, SCREEN_CLEAR_G, SCREEN_CLEAR_B);
-		//SDL_UpdateTexture(m_canvasTexture, nullptr, m_canvasImg->Buffer.data(), m_canvasImg->Width * sizeof(Uint32));
-		SDL_UpdateTexture(m_canvasTexture, nullptr, m_testImg->Buffer.data(), m_testImg->Width * sizeof(Uint32));
-		SDL_RenderCopy(m_renderer, m_canvasTexture, nullptr, &m_canvasRect);
+		m_canvas.Render(m_renderer);
 
 		ImGui_ImplSDLRenderer2_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
@@ -127,6 +95,56 @@ int App::Run()
 	return 0;
 }
 
+void App::OnClearCanvasButtonClick()
+{
+	m_canvas.m_img->ResetBufferWithARGB8888Color(255);
+}
+void App::OnCreateNewNNButtonClick()
+{
+	std::vector<int> layerSizes = Utils::stringToVecOfInts(m_layersInput);
+
+	if (m_nnTrainer.CreateNewNN(layerSizes))
+		Utils::print("New NN created");
+}
+void App::OnRunButtonClick()
+{
+	//int result = m_nnTrainer.CalculateValue(m_canvasImg->Buffer);
+
+	int result = 0;
+	if (result >= 0)
+		Utils::print("Written number is: " + result);
+}
+void App::OnLoadDataButtonClick()
+{
+	m_nnTrainer.LoadTrainData(m_trainDataFolderInput);
+}
+void App::OnTrainButtonClick()
+{
+	float learnRate = 0.0f;
+	try
+	{
+		learnRate = std::stof(m_learningRateInput);
+	}
+	catch (...)
+	{
+		Utils::printErr("Invalid learning rate input");
+		return;
+	}
+
+	int trainCount = 0;
+	try
+	{
+		trainCount = std::stoi(m_trainCountInput);
+	}
+	catch (...)
+	{
+		Utils::printErr("Invalid train count");
+		return;
+	}
+
+	m_nnTrainer.TrainNN(learnRate, trainCount);
+}
+
 
 void App::DrawUI()
 {
@@ -136,16 +154,21 @@ void App::DrawUI()
 	ImGui::Begin("Result");
 	if (ImGui::Button("Clear"))
 	{
-		m_canvasImg->ResetBufferWithARGB8888Color(255, 255, 255, 255);
+		OnClearCanvasButtonClick();
 	}
+
 	ImGui::SameLine();
 	if (ImGui::Button("RUN"))
 	{
-		int result = m_nnTrainer.CalculateValue(m_canvasImg->Buffer);
-
-		if (result >= 0)
-			std::cout << "Written number is: " << result << std::endl;
+		OnRunButtonClick();
 	}
+
+
+	//result
+	ImGui::Text("Result:");
+	ImGui::SameLine();
+	ImGui::Text("x");
+
 	ImGui::End();
 
 	//************
@@ -161,10 +184,7 @@ void App::DrawUI()
 	ImGui::InputText("##input1", &m_layersInput);
 	if (ImGui::Button("Create new NN"))
 	{
-		std::vector<int> layerSizes = Utils::stringToVecOfInts(m_layersInput);
-
-		if (m_nnTrainer.CreateNewNN(layerSizes))
-			std::cout << "New NN created" << std::endl;
+		OnCreateNewNNButtonClick();
 	}
 
 	//*******
@@ -175,13 +195,8 @@ void App::DrawUI()
 	ImGui::InputText("##input2", &m_trainDataFolderInput);
 	if (ImGui::Button("Load training data"))
 	{
-		std::cout << "Load training data";
+		OnLoadDataButtonClick();
 	}
-
-	//result
-	ImGui::Text("Result:");
-	ImGui::SameLine();
-	ImGui::Text("x");
 
 
 	//*******
@@ -199,6 +214,10 @@ void App::DrawUI()
 	ImGui::SameLine();
 	ImGui::InputText("##input5", &m_minErrorInput);
 
+	if (ImGui::Button("Load training data"))
+	{
+		OnTrainButtonClick();
+	}
 
 	ImGui::End();
 }

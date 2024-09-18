@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL.h>
 #include <iostream>
+#include <vector>
 
 class Img
 {
@@ -54,4 +55,60 @@ public:
 		}
 		return rgbValues;
 	}
+};
+
+class Img8
+{
+public:
+	Img8(const std::vector<Uint8>& grayBuffer, int height, int width) :
+		GrayBuffer(grayBuffer),
+		Height(height),
+		Width(width)
+	{}
+	Img8(int height, int width,Uint8 defaultPixelGray=0) :
+		Height(height),
+		Width(width),
+		GrayBuffer(width * height, defaultPixelGray)
+	{}
+
+	void ResetBufferWithARGB8888Color(Uint8 gray)
+	{
+		GrayBuffer.assign(GrayBuffer.size(), gray);
+		m_buffer32.clear();
+	}
+	
+	std::vector<Uint32> GetBufferARGB32Buffer()
+	{
+		if (m_buffer32.size() > 0)
+			return m_buffer32;
+		for (Uint8 pixel : GrayBuffer)
+		{
+			Uint32 pixel32 = (255 << 24) | (pixel << 16) | (pixel << 8) | pixel;
+			m_buffer32.push_back(pixel32);
+		}
+		return m_buffer32;
+	}
+
+	void SetPixelGray(int x, int y, Uint32 gray)
+	{
+		if (x < 0 || x >= Width || y < 0 || y >= Height) {
+			std::cerr << "Pixel coordinates are out of bounds!" << std::endl;
+			return;
+		}
+
+		int i = Width * y + x;
+		GrayBuffer[i] = gray;
+		
+		if(m_buffer32.size()>0)
+			m_buffer32[i] = (255 << 24) | (gray << 16) | (gray << 8) | gray;
+
+	}
+
+
+	int Height;
+	int Width;
+	std::vector<Uint8> GrayBuffer;
+
+private:
+	std::vector<Uint32> m_buffer32;
 };

@@ -164,13 +164,13 @@ namespace dawn
 		return GetLayer(GetLayerCount() - 1);
 	}
 
-	void NeuralNetwork::BackPropagate(const TrainData& data, float learnRate)
+	void NeuralNetwork::BackPropagate(const std::vector<float>& input,const std::vector<float>& targetOutput, float learnRate)
 	{
 		std::vector<Eigen::VectorXf> errors(GetLayerCount() - 1);
 		errors.back() = Eigen::VectorXf::Zero(m_neurons.back().size());
 
-		std::vector<float> output = FeedForward(data.input);
-		MathUtils::SubstractVec(output, data.target, errors.back());
+		std::vector<float> output = FeedForward(input);
+		MathUtils::SubstractVec(output, targetOutput, errors.back());
 		errors.back() = errors.back().cwiseProduct(m_activationDerivative(m_neurons.back()));
 
 		for (int i = GetLayerCount() - 2; i > 0; i--)
@@ -356,12 +356,14 @@ namespace dawn
 		{
 			for (const TrainData& d : data)
 			{
-				BackPropagate(d, params.learnRate);
+				BackPropagate(d.input,d.target, params.learnRate);
 				//printf((std::to_string(err) + "\n").c_str());
 			}
 
 			epochCount++;
 		}
 	}
+
+	
 
 }

@@ -20,6 +20,9 @@ namespace Utils
 	void TerminateImgui();
 
 	std::shared_ptr<Img> LoadImage(const char* imagePath);
+	std::shared_ptr<Img8> LoadImage8(const std::string& imagePath);
+
+	std::unordered_map<std::string, std::vector<std::string>> GetFilePathsInDirectSubfolders(const std::string& folderPath);
 	std::unordered_map<int, std::vector<std::shared_ptr<Img>>> LoadTrainingData(const std::string& trainingFolder); //move
 
 	void ClearWindow(SDL_Window* window, SDL_Renderer* renderer, int r, int g, int b);
@@ -29,6 +32,18 @@ namespace Utils
 
 	char* copystring(const char* str);
 
+	void print(const std::string& str);
+	void printErr(const std::string& str);
+
+	template<typename T>
+	struct CastResult
+	{
+		bool Success;
+		T res;
+	};
+
+
+	CastResult<int> TryCastInt(const std::string& str);
 	//std::vector<char> LoadGrayBuffer(const std::string path, int desiredWidth, int desiredHeight);
 	//unsigned char* ResizeBuffer(unsigned char* buffer, int width, int height, int channels, int newWidth, int newHeight);
 }

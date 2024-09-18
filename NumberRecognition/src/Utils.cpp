@@ -2,6 +2,7 @@
 #include <iostream>
 #include <sstream>  
 #include <SDL_image/include/SDL_image.h>
+#include <algorithm>
 
 namespace Utils
 {
@@ -65,6 +66,30 @@ namespace Utils
 			SDL_WINDOW_SHOWN);
 	}
 
+	std::unordered_map<std::string, std::vector<std::string>> GetFilePathsInDirectSubfolders(const std::string& folderPath)
+	{
+		std::unordered_map<std::string, std::vector<std::string>> folderFileMap;
+
+		// Iterate through the directory to get direct subfolders
+		for (const auto& entry : std::filesystem::directory_iterator(folderPath)) {
+			if (entry.is_directory()) {
+				std::string subfolder = entry.path().filename().string();  // Get the subfolder name
+
+				std::vector<std::string> files;
+				// Iterate through the files in the subfolder
+				for (const auto& fileEntry : std::filesystem::directory_iterator(entry.path())) {
+					if (fileEntry.is_regular_file()) {
+						files.push_back(fileEntry.path().filename().string());  // Store the file name
+					}
+				}
+
+				// Add the subfolder and its files to the map
+				folderFileMap[subfolder] = files;
+			}
+		}
+		return folderFileMap;
+	}
+
 	std::unordered_map<int, std::vector<std::shared_ptr<Img>>> LoadTrainingData(const std::string& trainingFolder)
 	{
 		//assumes folder has subfolders with name that matches the expected result, inside are images representing this result
@@ -75,14 +100,14 @@ namespace Utils
 
 		if (!std::filesystem::is_directory(path))
 		{
-			std::cerr << "The provided path is not a directory." << std::endl;
+			Utils::printErr("The provided path is not a directory.");
 			return trainingData;
 		}
 
 		for (const auto& entry : std::filesystem::directory_iterator(path)) {
 			if (!entry.is_directory())
 			{
-				std::cerr << "Only folders allowed in path folder!" << std::endl;
+				Utils::printErr("Only subfolders allowed in path folder!");
 				trainingData.clear();
 				return trainingData;
 			}
@@ -112,10 +137,67 @@ namespace Utils
 				}
 			}
 			trainingData[resultValue] = images;
-
 		}
 		return trainingData;
 	}
+
+	std::shared_ptr<Img8> LoadImage8(const std::string& filePath)
+	{
+		// Load the BMP image
+		SDL_Surface* imageSurface = IMG_Load(filePath.c_str());
+		if (!imageSurface) {
+			std::cerr << "SDL_LoadBMP Error: " << SDL_GetError() << std::endl;
+			return nullptr;
+		}
+
+		int width = imageSurface->w;
+		int height = imageSurface->h;
+		int pitch = imageSurface->pitch;
+
+		std::vector<Uint8> imgBuffer;
+
+		int bbp = pitch / width;
+		if (bbp == 1)
+		{
+			Uint8* bytePixels = reinterpret_cast<Uint8*>(imageSurface->pixels);
+			for (int i = 0; i < width * height * sizeof(Uint8); ++i)
+			{
+				Uint8 gray = bytePixels[i];
+				gray = (gray > 170) ? 255 : 0;
+				imgBuffer.push_back(gray);
+			}
+		}
+		else if (bbp == 3)
+		{
+			Uint8* bytePixels = reinterpret_cast<Uint8*>(imageSurface->pixels);
+			for (int i = 0; i < width * height * 3 * sizeof(Uint8); i += 3)
+			{
+				Uint8 gray = std::max({ bytePixels[i],bytePixels[i + 1],bytePixels[i + 2] });
+				gray = (gray > 170) ? 255 : 0;
+				imgBuffer.push_back(gray);
+			}
+		}
+		else if (bbp == 4) //assuming ARGB
+		{
+			Uint8* bytePixels = reinterpret_cast<Uint8*>(imageSurface->pixels);
+			for (int i = 0; i < width * height * 4 * sizeof(Uint8); i += 4)
+			{
+				Uint8 gray = std::max({ bytePixels[i + 1],bytePixels[i + 2],bytePixels[i + 3] });
+				gray = (gray > 170) ? 255 : 0;
+				imgBuffer.push_back(gray);
+			}
+		}
+		else
+		{
+			Utils::print("Unsupported pixel format!");
+			SDL_FreeSurface(imageSurface);
+			return nullptr;
+		}
+
+		SDL_FreeSurface(imageSurface);
+		return std::make_shared<Img8>(imgBuffer, width, height);
+	}
+
 
 	std::shared_ptr<Img> LoadImage(const char* imagePath)
 	{
@@ -131,8 +213,6 @@ namespace Utils
 		int height = imageSurface->h;
 		int pitch = imageSurface->pitch;
 		auto* format = imageSurface->format;
-		Uint32* pixels = (Uint32*)imageSurface->pixels;
-
 
 		std::cout << "Image loaded successfully!" << std::endl;
 		std::cout << "Width: " << width << std::endl;
@@ -142,32 +222,10 @@ namespace Utils
 
 		std::vector<Uint32> imgBuffer;
 
-
-
-
-
-		//const Uint8 Bpp = imageSurface->format->BytesPerPixel;
-		//for (int x = 0; x < width; x++)
-		//	for (int y = 0; y < height; y++)
-		//	{
-		//		Uint8* pPixel = (Uint8*)imageSurface->pixels + y * imageSurface->pitch + x * Bpp;
-		//		Uint32 PixelData = *(Uint32*)pPixel;
-		//		Uint8 r, g, b;
-		//		SDL_GetRGB(PixelData, imageSurface->format, &r, &g, &b);
-
-		//		Uint32 colorARGB = (0 << 24) + (r << 16) + (g << 8) + b;
-		//		imgBuffer.push_back(colorARGB);
-		//	}
-
-
-
-
-
-
 		int bbp = pitch / width;
 		if (bbp == 1)
 		{
-			Uint8* bytePixels = reinterpret_cast<Uint8*>(pixels);
+			Uint8* bytePixels = reinterpret_cast<Uint8*>(imageSurface->pixels);
 			for (int i = 0; i < width * height * sizeof(Uint8); ++i) {
 				Uint8 pixelValue = bytePixels[i];
 				if (pixelValue > 170)
@@ -178,22 +236,6 @@ namespace Utils
 				imgBuffer.push_back(colorARGB);
 			}
 		}
-		//else if (bbp == 2)
-		//{
-
-		//}
-		//else if (bbp == 3)
-		//{
-
-		//}
-		//else if (bbp == 4)
-		//{
-
-		//}
-
-
-		//std::cout << "Pitch: " << imageSurface->format->BytesPerPixel << std::endl;
-		//std::vector<Uint32> imgBuffer(pixels, pixels + pitch * height);
 
 		SDL_FreeSurface(imageSurface);
 		return std::make_shared<Img>(imgBuffer, width, height, format);
@@ -240,90 +282,27 @@ namespace Utils
 		return integers;
 	}
 
-	//std::vector<char> LoadGrayBuffer(const std::string path, int desiredWidth, int desiredHeight)
-	//{
-	//	int width, height, channels;
-	//	unsigned char* buffer = stbi_load(path.c_str(), &width, &height, &channels, 0);
-	//	unsigned char* resizedBuffer;
-	//	std::vector<char> grayBuffer;
+	void print(const std::string& str)
+	{
+		std::cout << str << std::endl;
 
-	//	if (!buffer)
-	//	{
-	//		std::cout << "Filed to load image!" << std::endl;
-	//		stbi_image_free(buffer);
-	//		return grayBuffer;
-	//	}
+	}
+	void printErr(const std::string& str)
+	{
+		std::cerr << str << std::endl;
 
-	//	if (width != desiredWidth && height != desiredHeight)
-	//	{
-	//		resizedBuffer = ResizeBuffer(buffer, width, height, channels, desiredWidth, desiredHeight);
-	//		stbi_image_free(buffer);
-	//		buffer = resizedBuffer;
-	//	}
+	}
 
-	//	std::vector<char> grayBuffer;
-	//	for (int i = 0; i < width * height; i++)
-	//	{
-	//		char gray = 0;
-	//		int pxStart = i * channels;
-	//		switch (channels)
-	//		{
-	//		case 1:
-	//			gray = buffer[pxStart];
-	//			break;
-	//		case 2:
-	//			gray = buffer[pxStart];
-	//			break;
-	//		case 3:
-	//			char r = buffer[pxStart];
-	//			char g = buffer[pxStart + 1];
-	//			char b = buffer[pxStart + 2];
 
-	//			gray = r;
-	//			break;
-	//		case 4:
-	//			char r = buffer[pxStart];
-	//			char g = buffer[pxStart + 1];
-	//			char b = buffer[pxStart + 2];
-
-	//			gray = r;
-	//			break;
-	//		default:
-	//			std::cerr << "unsupported channel size" << std::endl;
-	//			gray = 0;
-	//			break;
-	//		}
-	//		grayBuffer.push_back(gray);
-	//	}
-
-	//	return grayBuffer;
-	//}
-
-	//unsigned char* ResizeBuffer(unsigned char* buffer, int width, int height, int channels, int newWidth, int newHeight)
-	//{
-	//	unsigned char* resizedBuffer = new unsigned char[newWidth * newHeight * channels];
-
-	//	int stride = 0;
-
-	//	stbir_pixel_layout pixelLayout;
-	//	switch (channels)
-	//	{
-	//	case 1:
-	//		break; //g
-	//	case 2:
-	//		break; // ga
-	//	case 3:
-	//		break; // rgb
-	//	case 4:
-	//		break; //rgba
-	//	default:
-	//		std::cerr << "unsupported channel format" << std::endl;
-	//		return nullptr;
-	//	}
-
-	//	stbir_resize(buffer, width, height, stride, resizedBuffer, newWidth, newHeight, stride, STBIR_RGBA, STBIR_TYPE_UINT8, STBIR_EDGE_CLAMP, STBIR_FILTER_DEFAULT);
-
-	//	resizedBuffer;
-	//}
-
+	CastResult<int> TryCastInt(const std::string& str)
+	{
+		try
+		{
+			return { true,std::stoi(str) };
+		}
+		catch (...)
+		{
+			return { false,0 };
+		}
+	}
 }

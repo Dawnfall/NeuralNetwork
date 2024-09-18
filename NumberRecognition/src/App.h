@@ -1,9 +1,9 @@
 #pragma once
 #include "Trainer.h"
 #include "SDL/include/SDL.h"
-#include <iostream>
-
+#include "Canvas.h"
 #include "Utils.h"
+
 #include <memory>
 
 //***********
@@ -42,16 +42,18 @@ public:
 	int Run();
 
 	void DrawUI();
-	void UpdatePixelOnCanvas(std::shared_ptr<Img> img, int mouseX, int mouseY);
+
+	void OnClearCanvasButtonClick();
+	void OnCreateNewNNButtonClick();
+	void OnRunButtonClick();
+	void OnLoadDataButtonClick();
+	void OnTrainButtonClick();
 private:
 	Trainer m_nnTrainer;
 
 	SDL_Window* m_window = nullptr;
-	SDL_Texture* m_canvasTexture = nullptr;
 	SDL_Renderer* m_renderer = nullptr;
-
-	SDL_Rect m_canvasRect;
-	std::shared_ptr<Img> m_canvasImg = nullptr;
+	Canvas m_canvas;
 
 	SDL_Event e;
 
@@ -62,7 +64,5 @@ private:
 	std::string m_minErrorInput = "";
 	std::string m_resultText = "";
 	std::string m_outputText = "";
-
-	std::shared_ptr<Img> m_testImg = nullptr;
 
 };
