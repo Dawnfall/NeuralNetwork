@@ -37,7 +37,8 @@
 *.sln
 *.sln.bak
 
-3rd/
+!premake5.exe
+
 bin/
 bin-int/
 
