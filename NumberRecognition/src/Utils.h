@@ -39,7 +39,7 @@ namespace Utils
 	struct CastResult
 	{
 		bool Success;
-		T res;
+		T Result;
 	};
 
 

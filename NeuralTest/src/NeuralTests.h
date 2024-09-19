@@ -29,12 +29,6 @@ public:
 
 		//Test_BackPropagation1();
 		//Test_BackPropagation2();
-
-
-		//*****************
-		// Neural manager
-
-		Test_CreateNNs();
 	}
 
 private:
@@ -131,7 +125,7 @@ private:
 			MathUtils::Print("First Test ; Feedforward success\n");
 		}
 	}
-	static void Test_BackPropagation1()
+	/*static void Test_BackPropagation1()
 	{
 		std::vector<int> layers = { 2,3,1 };
 
@@ -151,14 +145,17 @@ private:
 			{ secLayerBiases,thirdLayerBiases });
 
 		dawn::TrainData d;
-		d.input = in;
-		d.target = target;
+		d.Input = in;
+		d.Target = target;
 
 		float learnRate = 0.5;
 
 		for (int i = 0; i < 1000; i++)
-			n.BackPropagate(d.input,d.target, learnRate);
-	}
+		{
+			auto errors = n.BackPropagate(d.input,d.target);
+			n.UpdateWeights(errors, learnRate);
+		}
+	}*/
 
 
 	//*************
@@ -226,13 +223,13 @@ private:
 			{ firstLayerBiases,secLayerBiases });
 
 		dawn::TrainData d;
-		d.input = in;
-		d.target = target;
-
 		float learnRate = 0.15f;
 
 		for (int i = 0; i < 250; i++)
-			n.BackPropagate(d.input,d.target, learnRate);
+		{
+			auto errors = n.BackPropagate(in, target);
+			n.UpdateWeights(errors, learnRate);
+		}
 	}
 
 	//*************
@@ -253,40 +250,44 @@ private:
 		std::vector<float> in3{ 0.01f,0.99f };
 		std::vector<float> in4{ 0.01f,0.01f };
 
-		dawn::TrainData train1 = { in1,out2 };
-		dawn::TrainData train2 = { in2,out1 };
-		dawn::TrainData train3 = { in3,out1 };
-		dawn::TrainData train4 = { in4,out2 };
+		dawn::TrainData trainData;
+		trainData.Inputs.push_back(in1);
+		trainData.Outputs.push_back(out2);
 
-		std::vector <dawn::TrainData> trainData{ train1,train2,train3,train4 };//, train2, train3, train4
+		trainData.Inputs.push_back(in2);
+		trainData.Outputs.push_back(out1);
 
-		dawn::TrainParams params;
-		params.learnRate = 0.3f;
-		params.maxEpoch = 10000;
-		params.minEpoch = 10000;
-		params.minError = 0.1f;
+		trainData.Inputs.push_back(in3);
+		trainData.Outputs.push_back(out1);
 
-		dawn::NeuralNetwork n(layers, gen);
-		n.Train(trainData, params);
+		trainData.Inputs.push_back(in4);
+		trainData.Outputs.push_back(out2);
+
+		trainData.LearnRate = 0.3f;
+		trainData.MaxInterCount = 10000;
+		trainData.MinError = 0.1f;
+
+		dawn::NeuralNetwork nn(layers, gen);
+		dawn::NeuralNetwork::Train(nn, trainData);
 
 		//test
 		bool isOk = true;
-		if (n.FeedForward(in1)[0] > 0.1)
+		if (nn.FeedForward(in1)[0] > 0.1)
 		{
 			MathUtils::Print("Test 1 failed\n");
 			isOk = false;
 		}
-		if (n.FeedForward(in2)[0] < 0.9)
+		if (nn.FeedForward(in2)[0] < 0.9)
 		{
 			MathUtils::Print("Test 2 failed\n");
 			isOk = false;
 		}
-		if (n.FeedForward(in3)[0] < 0.9)
+		if (nn.FeedForward(in3)[0] < 0.9)
 		{
 			MathUtils::Print("Test 3 failed\n");
 			isOk = false;
 		}
-		if (n.FeedForward(in4)[0] > 0.1)
+		if (nn.FeedForward(in4)[0] > 0.1)
 		{
 			MathUtils::Print("Test 4 failed\n");
 			isOk = false;
@@ -415,24 +416,4 @@ private:
 		std::cout << "Crossover test success!\n";
 
 	}
-
-	//**************************
-	// Neural Manager
-
-	//*************
-	// Create NNs
-
-	static void Test_CreateNNs()
-	{
-		dawn::NeuralManager manager;
-		std::vector<int> indices = manager.CreateNNs({ 3,2,1 }, 3);
-		if (indices.size() != 3)
-		{
-			std::cout << "Create NNs on Neural manager failed! " << std::endl;
-			return;
-		}
-
-		std::cout << "CreateNNs success!";
-	}
-
 };

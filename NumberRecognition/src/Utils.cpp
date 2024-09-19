@@ -79,7 +79,7 @@ namespace Utils
 				// Iterate through the files in the subfolder
 				for (const auto& fileEntry : std::filesystem::directory_iterator(entry.path())) {
 					if (fileEntry.is_regular_file()) {
-						files.push_back(fileEntry.path().filename().string());  // Store the file name
+						files.push_back(fileEntry.path().string());  // Store the file name
 					}
 				}
 

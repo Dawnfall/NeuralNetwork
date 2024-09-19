@@ -156,15 +156,15 @@ namespace dawn
 
 		for (int i = 0; i < m_weights.size(); i++)
 		{
-			m_neurons[i + 1] = m_weights[i] * m_neurons[i] + m_biases[i];
+			m_neurons[i + 1] = m_weights[i] * m_neurons[i] + m_biases[i]; //calculate values
 			for (float& value : m_neurons[i + 1])
 				value = m_activation(value);
 		}
 
-		return GetLayer(GetLayerCount() - 1);
+		return GetLayer(GetLayerCount() - 1); //retur output layer
 	}
 
-	void NeuralNetwork::BackPropagate(const std::vector<float>& input,const std::vector<float>& targetOutput, float learnRate)
+	std::vector<Eigen::VectorXf> NeuralNetwork::BackPropagate(const std::vector<float>& input, const std::vector<float>& targetOutput)
 	{
 		std::vector<Eigen::VectorXf> errors(GetLayerCount() - 1);
 		errors.back() = Eigen::VectorXf::Zero(m_neurons.back().size());
@@ -178,12 +178,19 @@ namespace dawn
 			errors[i - 1] = (m_weights[i].transpose() * errors[i]).cwiseProduct(m_activationDerivative(m_neurons[i]));
 		}
 
+		return errors;
+
+	}
+
+	void NeuralNetwork::UpdateWeights(const std::vector<Eigen::VectorXf>& errors, float learnRate)
+	{
 		for (int i = GetLayerCount() - 2; i >= 0; i--)
 		{
 			m_weights[i] -= learnRate * errors[i] * m_neurons[i].transpose();
 			m_biases[i] -= learnRate * errors[i];
 		}
 	}
+
 	std::vector<NeuralNetwork> NeuralNetwork::Duplicate(int count) const
 	{
 		std::vector<NeuralNetwork> copies;
@@ -297,7 +304,7 @@ namespace dawn
 	{
 		for (int i = 0; i < m_weights.size(); i++)
 		{
-			float rangeMax = 1 / std::sqrt((float)m_weights[i].cols());
+			float rangeMax = std::sqrt(6.0 / (float)m_weights[i].cols() + (float)m_weights[i].rows()); // Xavier Initialization for Sigmoid ; He Initialization for Relu -> std::sqrt(2.0f / n_in)
 			std::uniform_real_distribution<float> dist(-rangeMax, rangeMax);
 
 			for (int row = 0; row < m_weights[i].rows(); row++)
@@ -346,24 +353,23 @@ namespace dawn
 	//			m_biases[i][j] = biases[i][j];
 	//}
 
-
-	void NeuralNetwork::Train(const std::vector<TrainData>& data, const TrainParams& params)
+	void NeuralNetwork::Train(NeuralNetwork& nn, const TrainData& data)
 	{
-		//Train(data[0], params.learnRate);
+		std::random_device rd;
+		std::mt19937 gen(rd());
 
-		int epochCount = 0;
-		while (epochCount <= params.maxEpoch)
+		int iterCount = 0;
+		while (iterCount <= data.MaxInterCount)
 		{
-			for (const TrainData& d : data)
-			{
-				BackPropagate(d.input,d.target, params.learnRate);
-				//printf((std::to_string(err) + "\n").c_str());
-			}
+			std::uniform_int_distribution<> range(0, data.Outputs.size() - 1);
+			int index = range(gen);
 
-			epochCount++;
+			auto errors = nn.BackPropagate(data.Inputs[index], data.Outputs[index]);
+			nn.UpdateWeights(errors, data.LearnRate);
+
+			std::cout << "Avg Error: " << MathUtils::SumSquaredVector(errors.back()) << "\n";
+			iterCount++;
 		}
 	}
-
-	
 
 }

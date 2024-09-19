@@ -21,6 +21,5 @@ public:
 
 	std::shared_ptr<Img8> m_img = nullptr;
 	SDL_Texture* m_texture = nullptr;
-
 	SDL_Rect m_rect;
 };

@@ -6,13 +6,12 @@
 //
 #include "Core.h"
 #include "MathUtils.h"
-#include "Data.h"
+#include "TrainData.h"
 
 namespace dawn
 {
 	class NeuralNetwork
 	{
-
 	public:
 #pragma region Constructors
 		NeuralNetwork(
@@ -45,26 +44,24 @@ namespace dawn
 		float GetBias(int layer, int row)const;
 #pragma endregion
 
-#pragma region Operators
-		bool operator==(const NeuralNetwork& other)const;
-		bool operator!=(const NeuralNetwork& other)const;
-
-#pragma endregion
-
 #pragma region Functionality
 
-		std::vector<float> FeedForward(const std::vector<float>& inputs);
-		void BackPropagate(const std::vector<float>& input, const std::vector<float>& targetOutput, float learnRate);
+		std::vector<float> FeedForward(const std::vector<float>& inputs); // calculates output of the network
+		std::vector<Eigen::VectorXf> BackPropagate(const std::vector<float>& input, const std::vector<float>& targetOutput); //calculates the error of the network
+		void UpdateWeights(const std::vector<Eigen::VectorXf>& errors, float learnRate); //updates the weights of the network based on the error
+
 		std::vector<NeuralNetwork> Duplicate(int count)const;
 		void Mutate(float changeProb, float maxChange, std::mt19937& randGen);
 		static NeuralNetwork CrossOver(NeuralNetwork& a, NeuralNetwork& b, std::mt19937& randGen);
 
+		bool operator==(const NeuralNetwork& other)const;
+		bool operator!=(const NeuralNetwork& other)const;
 #pragma endregion
 
 		std::vector<float> ExportData()const;
 		std::string ToString()const;
 
-		void Train(const std::vector<TrainData>& data, const TrainParams& params);
+		static void Train(NeuralNetwork& nn, const TrainData& data);
 
 
 	private:

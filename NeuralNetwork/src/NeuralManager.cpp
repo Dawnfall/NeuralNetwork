@@ -42,45 +42,7 @@ namespace dawn
 		return results;
 	}
 
-	std::vector<int> NeuralManager::CreateNNs(const std::vector<int>& layers, int count)
-	{
-		std::vector<int> ids;
 
-		for (int i = 0; i < count; i++)
-		{
-			int newId = GetValidKey();
-			m_allNNs.insert(m_allNNs.begin() + newId, std::make_unique<NeuralNetwork>(layers, m_randGen));
-			ids.push_back(newId);
-		}
-
-		return ids;
-	}
-	std::vector<int> NeuralManager::CreateNNsFromData(const std::vector<float>& data, int count)
-	{
-		std::vector<int> ids;
-
-		for (int i = 0; i < count - 1; i++)
-		{
-			int newId = GetValidKey();
-			m_allNNs.insert(m_allNNs.begin() + newId, std::make_unique<NeuralNetwork>(data));
-			ids.push_back(newId);
-		}
-
-		return ids;
-	}
-	std::vector<int> NeuralManager::DuplicateNN(int id, int count)
-	{
-		std::vector<int> ids;
-
-		for (int i = 0; i < count - 1; i++)
-		{
-			int newId = GetValidKey();
-			m_allNNs.insert(m_allNNs.begin() + newId, std::make_unique<NeuralNetwork>(*m_allNNs[id]));
-			ids.push_back(newId);
-		}
-
-		return ids;
-	}
 
 	void NeuralManager::Run()
 	{
@@ -106,25 +68,4 @@ namespace dawn
 		}
 	}
 
-
-
-	int NeuralManager::GetValidKey()
-	{
-		if (!m_availableIndices.empty())
-		{
-			int index = m_availableIndices.back();
-			m_availableIndices.pop_back();
-			return index;
-		}
-		else
-		{
-			return (int)m_allNNs.size();
-		}
-	}
-	void NeuralManager::RemoveKey(int key)
-	{
-		if (key == m_allNNs.size() - 1)
-			return;
-		m_availableIndices.push_back(key);
-	}
 }

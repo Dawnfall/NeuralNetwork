@@ -57,7 +57,7 @@ void Canvas::UpdatePixelOnCanvas(int mouseX, int mouseY)
 
 		m_img->SetPixelGray(texX, texY, 0);
 
-		Utils::print("Mouse clicked at texture pixel: (" + std::to_string(texX) + ", " + std::to_string(texY) + ")");
+		//Utils::print("Mouse clicked at texture pixel: (" + std::to_string(texX) + ", " + std::to_string(texY) + ")");
 	}
 }
 

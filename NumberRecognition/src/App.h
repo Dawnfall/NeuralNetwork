@@ -55,13 +55,11 @@ private:
 	SDL_Renderer* m_renderer = nullptr;
 	Canvas m_canvas;
 
-	SDL_Event e;
-
-	std::string m_layersInput = "";
-	std::string m_trainDataFolderInput = "";
-	std::string m_trainCountInput = "";
-	std::string m_learningRateInput = "";
-	std::string m_minErrorInput = "";
+	std::string m_layersInput = "256 128 64 10"; //256 64 32 10
+	std::string m_trainDataFolderInput = "C:/Users/Dawn/Desktop/digits_updated/ReSized";
+	std::string m_trainCountInput = "10";
+	std::string m_learningRateInput = "0.3";
+	std::string m_minErrorInput = "0.1";
 	std::string m_resultText = "";
 	std::string m_outputText = "";
 
