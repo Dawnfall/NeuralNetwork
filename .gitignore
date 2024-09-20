@@ -37,8 +37,12 @@
 *.sln
 *.sln.bak
 
-!premake5.exe
-
 bin/
 bin-int/
+
+!Dependencies/premake/**/*.exe
+!Dependencies/SDL/**/*.lib
+!Dependencies/SDL_image/**/*.lib
+
+
 

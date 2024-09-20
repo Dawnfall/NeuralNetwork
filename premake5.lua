@@ -1,6 +1,7 @@
 workspace "NeuralNetwork"
     configurations { "Debug", "Release" }
     architecture "x86_64"
+    startproject "NumberRecognition"
 
     outputDir = "%{cfg.buildcfg}"
 
