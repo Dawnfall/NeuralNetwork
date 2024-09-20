@@ -44,5 +44,8 @@ bin-int/
 !Dependencies/SDL/**/*.lib
 !Dependencies/SDL_image/**/*.lib
 
+!Dependencies/SDL/**/*.dll
+!Dependencies/SDL_image/**/*.dll
+
 
 
