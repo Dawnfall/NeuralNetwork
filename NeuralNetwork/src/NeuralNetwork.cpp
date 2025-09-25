@@ -1,5 +1,4 @@
 #include "NeuralNetwork.h"
-
 #include <sstream>
 #include <iostream>
 #include <random>
@@ -355,6 +354,12 @@ namespace dawn
 
 	void NeuralNetwork::Train(NeuralNetwork& nn, const TrainData& data)
 	{
+		if (nn.GetLayerCount() == 0)
+		{
+			std::cerr << "No neural network defined" << std::endl;
+			return;
+		}
+
 		std::random_device rd;
 		std::mt19937 gen(rd());
 
@@ -367,9 +372,31 @@ namespace dawn
 			auto errors = nn.BackPropagate(data.Inputs[index], data.Outputs[index]);
 			nn.UpdateWeights(errors, data.LearnRate);
 
-			std::cout << "Avg Error: " << MathUtils::SumSquaredVector(errors.back()) << "\n";
+			//std::cout << "Avg Error: " << MathUtils::SumSquaredVector(errors.back()) << "\n";
 			iterCount++;
 		}
+
+		std::cout << "Training Complete!" << std::endl;
 	}
+
+	std::unique_ptr<dawn::NeuralNetwork> CreateNewNN(const std::vector<int>& layerSizes)
+	{
+		if (layerSizes.size() < 2)
+		{
+			std::cout << "not enough NN layers" << std::endl;
+			return nullptr;
+		}
+
+		for (auto& layer : layerSizes)
+			if (layer < 1)
+			{
+				std::cout << "layer size must at least 1" << std::endl;
+				return nullptr;
+			}
+
+		std::mt19937 randGen;
+		return std::make_unique<dawn::NeuralNetwork>(layerSizes, randGen, MathUtils::ReLU, MathUtils::ReLUDerivative);
+	}
+
 
 }

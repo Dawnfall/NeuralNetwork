@@ -3,8 +3,7 @@
 #include <vector>
 #include <Eigen/Core>
 #include <random>
-//
-#include "Core.h"
+
 #include "MathUtils.h"
 #include "TrainData.h"
 
@@ -63,7 +62,6 @@ namespace dawn
 
 		static void Train(NeuralNetwork& nn, const TrainData& data);
 
-
 	private:
 		std::vector<Eigen::VectorXf> m_neurons;
 		std::vector<Eigen::MatrixXf> m_weights;
@@ -78,4 +76,7 @@ namespace dawn
 		void InitWeights(const std::vector<std::vector<std::vector<float>>>& weights);
 		void InitBiases(const std::vector<std::vector<float>>& biases);
 	};
+
+	std::unique_ptr<dawn::NeuralNetwork> CreateNewNN(const std::vector<int>& layerSizes);
+
 }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "NeuralNetwork.h"
-#include "NeuralManager.h"
 #include "MathUtils.h"
 
 #include <vector>
@@ -22,7 +21,7 @@ public:
 		Test_ForwardPropagation1();
 		Test_ForwardPropagation2();
 
-		Test_XOr();
+		Test_XOR();
 
 		Test_Mutate();
 		Test_CrossOver();
@@ -235,7 +234,7 @@ private:
 	//*************
 	// Full Test
 
-	static void Test_XOr()
+	static void Test_XOR()
 	{
 		std::random_device rd;
 		std::mt19937 gen(rd());
@@ -388,6 +387,7 @@ private:
 		}
 		std::cout << "Mutate test success!\n";
 	}
+
 	static void Test_CrossOver()
 	{
 		std::vector<float> nnAsData1

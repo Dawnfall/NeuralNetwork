@@ -29,6 +29,7 @@ namespace Utils
 	SDL_Window* OpenWindow(const std::string& name, int width, int height);
 
 	std::vector<int> stringToVecOfInts(const std::string& str);
+	std::string vecOfIntsToString(const std::vector<int>& ints);
 
 	char* copystring(const char* str);
 

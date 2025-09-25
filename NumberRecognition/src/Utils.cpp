@@ -282,6 +282,17 @@ namespace Utils
 		return integers;
 	}
 
+	std::string vecOfIntsToString(const std::vector<int>& ints)
+	{
+		std::string out;
+		for (int i : ints)
+		{
+			out += std::to_string(i)+" ";
+		}
+		return out;
+	}
+
+
 	void print(const std::string& str)
 	{
 		std::cout << str << std::endl;
